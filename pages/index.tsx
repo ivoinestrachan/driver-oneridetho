@@ -1,11 +1,18 @@
-import { useState, FormEvent } from 'react';
-import { signIn } from 'next-auth/react';
+import { useEffect, useState, FormEvent } from 'react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 
 export default function Home() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter(); 
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (session) {
+      router.push('/dashboard');
+    }
+  }, [session, router]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault(); 
@@ -22,6 +29,10 @@ export default function Home() {
       console.error('Failed to sign in:', result.error);
     }
   };
+
+  if (status === 'loading') {
+    return <p>Loading...</p>;
+  }
 
   return (
     <div>

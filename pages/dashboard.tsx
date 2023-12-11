@@ -92,14 +92,6 @@ const Dashboard = () => {
                 <br />
                 <strong>Rating:</strong> {ride.user.rating}
                 <br />
-                <a
-                  href={`tel:${ride.user.phone}`}
-                  className="flex items-center gap-1"
-                >
-                  {" "}
-                  <strong>Phone:</strong>{" "}
-                  <p className="underline text-blue-400">{ride.user.phone}</p>
-                </a>
               </div>
             )}
             <div className="space-y-2">

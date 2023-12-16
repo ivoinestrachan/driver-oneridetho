@@ -1,3 +1,4 @@
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
 interface User {
@@ -20,10 +21,13 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const {data: session} = useSession()
+
   const acceptRide = async (rideId: number) => {
     setIsLoading(true);
     try {
-      const driverId = 1;
+      const driverId = session?.user.id;
+
 
       const response = await fetch(`/api/rides/accept/${rideId}`, {
         method: 'POST',

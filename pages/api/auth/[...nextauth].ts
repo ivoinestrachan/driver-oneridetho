@@ -10,7 +10,7 @@ export default NextAuth({
       name: "DriverCredentials",
       credentials: {
         email: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
       },
       authorize: async (credentials) => {
         if (!credentials || !credentials.email || !credentials.password) {
@@ -22,16 +22,17 @@ export default NextAuth({
         });
 
         if (driver && credentials.password === driver.password) {
-          return { id: driver.id.toString(), email: driver.email };
+          return {
+            id: driver.id,
+            email: driver.email
+          };
         } else {
-          throw new Error("Invalid email or password");
+          return null;
         }
       },
     }),
   ],
-
   secret: process.env.NEXTAUTH_SECRET,
-
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -39,22 +40,10 @@ export default NextAuth({
       }
       return token;
     },
-
     async session({ session, token }) {
       if (token.id) {
-        const driver = await prisma.driver.findUnique({
-          where: { id: parseInt(token.id as string) },
-        });
-
-        if (driver) {
-          session.user = {
-            //@ts-ignore
-            id: driver.id.toString(),
-            email: driver.email
-          };
-        }
+        session.user.id = token.id as number; 
       }
-    
       return session;
     },
   },

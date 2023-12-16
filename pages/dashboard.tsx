@@ -1,5 +1,12 @@
+import {
+  GoogleMap,
+  InfoWindow,
+  LoadScript,
+  Marker,
+} from "@react-google-maps/api";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { HiMiniStar } from "react-icons/hi2";
 
 interface User {
   id: number;
@@ -13,26 +20,41 @@ interface Ride {
   id: number;
   pickupLocation: any;
   dropoffLocation: any;
+  fare: number;
   user: User;
 }
+
+const containerStyle = {
+  width: "100%",
+  height: "90vh",
+};
+
+const defaultCenter = {
+  lat: 25.06,
+  lng: -77.345,
+};
 
 const Dashboard = () => {
   const [rides, setRides] = useState<Ride[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
 
-  const {data: session} = useSession()
+  const { data: session } = useSession();
+
+  const onMarkerClick = (ride: Ride) => {
+    setSelectedRide(ride);
+  };
 
   const acceptRide = async (rideId: number) => {
     setIsLoading(true);
     try {
       const driverId = session?.user.id;
 
-
       const response = await fetch(`/api/rides/accept/${rideId}`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ driverId }),
       });
@@ -40,7 +62,7 @@ const Dashboard = () => {
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
-      const updatedRides = rides.filter(ride => ride.id !== rideId);
+      const updatedRides = rides.filter((ride) => ride.id !== rideId);
       setRides(updatedRides);
     } catch (err) {
       if (err instanceof Error) {
@@ -50,7 +72,6 @@ const Dashboard = () => {
       setIsLoading(false);
     }
   };
-
 
   useEffect(() => {
     const fetchUnacceptedRides = async () => {
@@ -74,49 +95,97 @@ const Dashboard = () => {
     fetchUnacceptedRides();
   }, []);
 
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p>Error: {error}</p>;
+  const getCoordinates = async (address: any) => {
+    const response = await fetch("/api/geocode", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ address }),
+    });
+    const data = await response.json();
+    return data;
+  };
+
+  const isTextualAddress = (location: any) => {
+    return isNaN(parseFloat(location));
+  };
+
+  useEffect(() => {
+    const fetchRides = async () => {
+      try {
+        const response = await fetch("/api/rides/unaccepted");
+        if (!response.ok) {
+          throw new Error("Failed to fetch rides");
+        }
+        let ridesData = await response.json();
+
+        for (let ride of ridesData) {
+          if (isTextualAddress(ride.pickupLocation)) {
+            const coordinates = await getCoordinates(ride.pickupLocation);
+            ride.pickupLocation = coordinates;
+          } else {
+            const [lat, lng] = ride.pickupLocation.split(",").map(Number);
+            ride.pickupLocation = { lat, lng };
+          }
+        }
+
+        setRides(ridesData);
+      } catch (error) {
+        console.error("Error fetching rides:", error);
+      }
+    };
+
+    fetchRides();
+  }, []);
+
+  const mapOptions = {
+    fullscreenControl: false,
+    mapTypeControl: false,
+    streetViewControl: false,
+    zoomControl: false,
+  };
 
   return (
-    <div className="px-2">
-      <div>
+    <LoadScript googleMapsApiKey={process.env.API_KEY || ""}>
+      <GoogleMap
+        mapContainerStyle={containerStyle}
+        center={defaultCenter}
+        zoom={13}
+        options={mapOptions}
+      >
         {rides.map((ride) => (
-          <div key={ride.id} className="mb-[20px] space-y-2">
-            <div>
-              <strong>Pickup Location:</strong>{" "}
-              {JSON.stringify(ride.pickupLocation)}
-            </div>
-            <div>
-              <strong>Dropoff Location:</strong>{" "}
-              {JSON.stringify(ride.dropoffLocation)}
-            </div>
-            {ride.user && (
-              <div>
-                <strong>Passenger Name:</strong> {ride.user.name}
-                <br />
-                <strong>Rating:</strong> {ride.user.rating}
-                <br />
+          <Marker
+            key={ride.id}
+            position={ride.pickupLocation}
+            onClick={() => onMarkerClick(ride)}
+          />
+        ))}
+        {selectedRide && (
+          <div className="absolute bottom-0 bg-white w-full h-[18vh] pt-4 rounded-t-[16px]">
+            <div className="text-center">
+              <div>{selectedRide.user.name}</div>
+              <div className="font-bold text-[20px]">${selectedRide.fare}</div>
+              <div className="flex items-center gap-2 justify-center">
+                <span>
+                  <HiMiniStar />  
+                </span>
+                {selectedRide.user.rating}
               </div>
-            )}
-            <div className="space-y-2">
-              <div>
-                <button className="py-3 pl-8 pr-8 bg-green-500 rounded-md text-white"
-                 onClick={() => acceptRide(ride.id)}
-                >
-                  Accept
-                </button>
-              </div>
+            </div>
 
-              <div>
-                <button className="py-3 pl-8 pr-8 bg-red-500 rounded-md text-white">
-                  Decline
-                </button>
-              </div>
+            <div>
+              <button
+                className="py-3 w-[90%] bg-black rounded-md text-white ml-4 mr-4 mt-2"
+                onClick={() => acceptRide(selectedRide.id)}
+              >
+                Accept
+              </button>
             </div>
           </div>
-        ))}
-      </div>
-    </div>
+        )}
+      </GoogleMap>
+    </LoadScript>
   );
 };
 

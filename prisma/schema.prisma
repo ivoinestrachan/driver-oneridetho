@@ -75,7 +75,7 @@ model Ride {
   fare            Float
   tip             Float?     @default(5)
   userId          Int
-  driverId        Int
+  driverId        Int?
   status          RideStatus
   pickupLocation  Json
   dropoffLocation Json
@@ -84,7 +84,7 @@ model Ride {
   isConfirmed     Boolean
   paymentMethod   String
   bookings        Booking[]
-  driver          Driver     @relation("DriverRides", fields: [driverId], references: [id])
+  driver          Driver?    @relation("DriverRides", fields: [driverId], references: [id])
   user            User       @relation("UserRides", fields: [userId], references: [id])
 }
 

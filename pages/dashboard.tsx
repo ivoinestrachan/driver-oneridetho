@@ -5,6 +5,7 @@ import {
   Marker,
 } from "@react-google-maps/api";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { HiMiniStar } from "react-icons/hi2";
 
@@ -41,6 +42,7 @@ const Dashboard = () => {
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
 
   const { data: session } = useSession();
+  const router = useRouter();
 
   const onMarkerClick = (ride: Ride) => {
     setSelectedRide(ride);
@@ -64,6 +66,7 @@ const Dashboard = () => {
       }
       const updatedRides = rides.filter((ride) => ride.id !== rideId);
       setRides(updatedRides);
+      router.push(`/ride/${rideId}`);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -174,9 +177,9 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div>
+            <div className="flex justify-center">
               <button
-                className="py-3 w-[90%] bg-black rounded-md text-white ml-4 mr-4 mt-2"
+                className="py-3 w-[90%] bg-black rounded-md text-white  text-center mt-2"
                 onClick={() => acceptRide(selectedRide.id)}
               >
                 Accept

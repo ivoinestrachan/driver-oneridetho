@@ -23,15 +23,14 @@ const mapOptions = {
 interface User {
   id: number;
   name: string;
-  // photoUrl: string;
   rating: number;
   phone: number;
 }
 
 interface Ride {
   id: number;
-  pickupLocation: any;
-  dropoffLocation: any;
+  pickupLocation: string; 
+  dropoffLocation: any;   
   fare: number;
   user: User;
 }
@@ -43,45 +42,52 @@ const RidePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [directions, setDirections] = useState(null);
-
-  const [driverLocation, setDriverLocation] = useState({
-    lat: 25.0391144,
-    lng: -77.4663677,
-  });
-  const [pickupLocation, setPickupLocation] = useState({
-    lat: 25.0491144,
-    lng: -77.4663677,
-  });
-
-  
+  const [driverLocation, setDriverLocation] = useState({ lat: 0, lng: 0 });
+  const [pickupLocation, setPickupLocation] = useState(null);
 
   const mapRef = useRef();
+
   const onMapLoad = useCallback((map: any) => {
     mapRef.current = map;
   }, []);
 
+  const fetchCoordinates = async (address: any) => {
+    try {
+      const response = await axios.post('/api/geocode', { address });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching coordinates:", error);
+      return null;
+    }
+  };
+
   useEffect(() => {
-    if (rideId) {
-      const fetchRideDetails = async () => {
+    const fetchRideDetails = async () => {
+      if (typeof rideId === 'string') {
         setIsLoading(true);
         try {
-          const response = await axios.get(`/api/rides/unaccepted`);
-          setRideDetails(response.data);
+          const response = await axios.get(`/api/rides/${rideId}`);
+          const fetchedRideDetails = response.data;
+          setRideDetails(fetchedRideDetails);
+
+          const coordinates = await fetchCoordinates(fetchedRideDetails.pickupLocation);
+          if (coordinates) {
+            setPickupLocation(coordinates);
+          }
         } catch (error) {
           console.error("Error fetching ride details:", error);
           setError("Failed to load ride details.");
         } finally {
           setIsLoading(false);
         }
-      };
-
-      fetchRideDetails();
-    }
+      }
+    };
+    fetchRideDetails();
   }, [rideId]);
 
   useEffect(() => {
     const updateDirections = () => {
-      if (!mapRef.current) return;
+      if (!mapRef.current || !pickupLocation) return;
 
       const directionsService = new google.maps.DirectionsService();
       directionsService.route(
@@ -95,41 +101,44 @@ const RidePage = () => {
             //@ts-ignore
             setDirections(result);
           } else {
-            console.error(`Error fetching directions: ${result}`);
+            console.error(`Error fetching directions: ${status}`);
           }
         }
       );
     };
 
     const intervalId = setInterval(updateDirections, 10000);
-
     return () => clearInterval(intervalId);
   }, [driverLocation, pickupLocation]);
 
-  useEffect(() => {
-    if (rideId) {
-      const fetchRideDetails = async () => {
-        setIsLoading(true);
-        try {
-          const response = await axios.get(`/api/rides/${rideId}`);
-          const rideData = response.data;
-          setRideDetails(rideData);
-        } catch (error) {
-          console.error("Error fetching ride details:", error);
-          setError("Failed to load ride details.");
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
-      fetchRideDetails();
-    }
-  }, [rideId]);
-
   const openInMaps = () => {
-    const destination = `${pickupLocation.lat},${pickupLocation.lng}`;
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
-    window.open(url, "_blank");
+    if (pickupLocation) {
+      //@ts-ignore
+      const destination = `${pickupLocation.lat},${pickupLocation.lng}`;
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+      window.open(url, "_blank");
+    }
+  };
+
+  const [manualDriverLat, setManualDriverLat] = useState('');
+  const [manualDriverLng, setManualDriverLng] = useState('');
+  
+
+  const getCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        setManualDriverLat(position.coords.latitude.toString());
+        setManualDriverLng(position.coords.longitude.toString());
+        setDriverLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+      }, (error) => {
+        console.error("Error getting current location:", error);
+      });
+    } else {
+      console.error("Geolocation is not supported by this browser.");
+    }
   };
 
   if (isLoading) return <p>Loading...</p>;
@@ -139,16 +148,40 @@ const RidePage = () => {
     <div>
       {rideDetails && (
         <>
+                <div>
+            <input
+              type="text"
+              placeholder="Enter Driver's Latitude"
+              value={manualDriverLat}
+              onChange={(e) => setManualDriverLat(e.target.value)}
+              className="hidden"
+          
+            />
+            <input
+              type="text"
+              placeholder="Enter Driver's Longitude"
+              value={manualDriverLng}
+              onChange={(e) => setManualDriverLng(e.target.value)}
+              className="hidden"
+           
+            />
+              <button onClick={() => getCurrentLocation()} className="py-2">
+                Get Current Location
+              </button>
+          </div>
+
+        
+
           <LoadScript googleMapsApiKey={process.env.API_KEY || ""}>
             <GoogleMap
               mapContainerStyle={mapContainerStyle}
-              center={pickupLocation}
+              center={pickupLocation || { lat: 0, lng: 0 }}
               zoom={12}
               onLoad={onMapLoad}
               options={mapOptions}
             >
               <Marker position={driverLocation} label="Driver" />
-              <Marker position={pickupLocation} label="Pickup" />
+              {pickupLocation && <Marker position={pickupLocation} label="Pickup" />}
               {directions && <DirectionsRenderer directions={directions} />}
             </GoogleMap>
           </LoadScript>

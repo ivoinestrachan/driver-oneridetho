@@ -1,7 +1,7 @@
 import Image from "next/image";
 import logo from "../assets/logo.svg";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 
 const Navbar = () => {
   const { data: session } = useSession();

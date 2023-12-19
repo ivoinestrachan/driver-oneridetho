@@ -29,8 +29,8 @@ interface User {
 
 interface Ride {
   id: number;
-  pickupLocation: string; 
-  dropoffLocation: any;   
+  pickupLocation: string;
+  dropoffLocation: any;
   fare: number;
   user: User;
 }
@@ -44,6 +44,9 @@ const RidePage = () => {
   const [directions, setDirections] = useState(null);
   const [driverLocation, setDriverLocation] = useState({ lat: 0, lng: 0 });
   const [pickupLocation, setPickupLocation] = useState(null);
+  const [eta, setEta] = useState("");
+  const [dropoffLocation, setDropoffLocation] = useState(null);
+  const [isPickedUp, setIsPickedUp] = useState(false);
 
   const mapRef = useRef();
 
@@ -53,7 +56,7 @@ const RidePage = () => {
 
   const fetchCoordinates = async (address: any) => {
     try {
-      const response = await axios.post('/api/geocode', { address });
+      const response = await axios.post("/api/geocode", { address });
       return response.data;
     } catch (error) {
       console.error("Error fetching coordinates:", error);
@@ -61,16 +64,56 @@ const RidePage = () => {
     }
   };
 
+  const handlePickedUp = async () => {
+    if (rideDetails) {
+      try {
+        await axios.patch(`/api/rides/${rideId}`, {
+          status: "InProgress",
+          pickupTime: new Date(),
+        });
+
+        const dropoffCoordinates = await fetchCoordinates(
+          rideDetails.dropoffLocation
+        );
+        if (dropoffCoordinates) {
+          setDropoffLocation(dropoffCoordinates);
+        }
+      } catch (error) {
+        console.error("Error updating ride status:", error);
+      }
+    }
+    setIsPickedUp(true);
+  };
+
+  const handleRideComplete = async () => {
+    if (rideDetails) {
+      try {
+        await axios.patch(`/api/rides/${rideId}`, {
+          status: "Completed",
+          dropoffTime: new Date(),
+        });
+        alert("Ride completed successfully!");
+
+        router.push("/dashboard");
+      } catch (error) {
+        console.error("Error completing the ride:", error);
+        alert("Failed to complete the ride.");
+      }
+    }
+  };
+
   useEffect(() => {
     const fetchRideDetails = async () => {
-      if (typeof rideId === 'string') {
+      if (typeof rideId === "string") {
         setIsLoading(true);
         try {
           const response = await axios.get(`/api/rides/${rideId}`);
           const fetchedRideDetails = response.data;
           setRideDetails(fetchedRideDetails);
 
-          const coordinates = await fetchCoordinates(fetchedRideDetails.pickupLocation);
+          const coordinates = await fetchCoordinates(
+            fetchedRideDetails.pickupLocation
+          );
           if (coordinates) {
             setPickupLocation(coordinates);
           }
@@ -87,19 +130,31 @@ const RidePage = () => {
 
   useEffect(() => {
     const updateDirections = () => {
-      if (!mapRef.current || !pickupLocation) return;
+      if (
+        !mapRef.current ||
+        !driverLocation ||
+        !(pickupLocation || dropoffLocation)
+      )
+        return;
+
+      const destination = isPickedUp ? dropoffLocation : pickupLocation;
+      if (!destination) return;
 
       const directionsService = new google.maps.DirectionsService();
       directionsService.route(
         {
           origin: driverLocation,
-          destination: pickupLocation,
+          destination: destination,
           travelMode: google.maps.TravelMode.DRIVING,
         },
         (result, status) => {
           if (status === google.maps.DirectionsStatus.OK) {
             //@ts-ignore
             setDirections(result);
+
+            //@ts-ignore
+            const duration = result.routes[0].legs[0].duration.text;
+            setEta(duration);
           } else {
             console.error(`Error fetching directions: ${status}`);
           }
@@ -109,7 +164,7 @@ const RidePage = () => {
 
     const intervalId = setInterval(updateDirections, 10000);
     return () => clearInterval(intervalId);
-  }, [driverLocation, pickupLocation]);
+  }, [driverLocation, pickupLocation, dropoffLocation, isPickedUp]);
 
   const openInMaps = () => {
     if (pickupLocation) {
@@ -120,22 +175,24 @@ const RidePage = () => {
     }
   };
 
-  const [manualDriverLat, setManualDriverLat] = useState('');
-  const [manualDriverLng, setManualDriverLng] = useState('');
-  
+  const [manualDriverLat, setManualDriverLat] = useState("");
+  const [manualDriverLng, setManualDriverLng] = useState("");
 
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        setManualDriverLat(position.coords.latitude.toString());
-        setManualDriverLng(position.coords.longitude.toString());
-        setDriverLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        });
-      }, (error) => {
-        console.error("Error getting current location:", error);
-      });
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setManualDriverLat(position.coords.latitude.toString());
+          setManualDriverLng(position.coords.longitude.toString());
+          setDriverLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error("Error getting current location:", error);
+        }
+      );
     } else {
       console.error("Geolocation is not supported by this browser.");
     }
@@ -148,14 +205,13 @@ const RidePage = () => {
     <div>
       {rideDetails && (
         <>
-                <div>
+          <div>
             <input
               type="text"
               placeholder="Enter Driver's Latitude"
               value={manualDriverLat}
               onChange={(e) => setManualDriverLat(e.target.value)}
               className="hidden"
-          
             />
             <input
               type="text"
@@ -163,41 +219,61 @@ const RidePage = () => {
               value={manualDriverLng}
               onChange={(e) => setManualDriverLng(e.target.value)}
               className="hidden"
-           
             />
-              <button onClick={() => getCurrentLocation()} className="py-2">
-                Get Current Location
-              </button>
+            <button onClick={() => getCurrentLocation()} className="py-2">
+              Get Current Location
+            </button>
           </div>
-
-        
 
           <LoadScript googleMapsApiKey={process.env.API_KEY || ""}>
             <GoogleMap
               mapContainerStyle={mapContainerStyle}
-              center={pickupLocation || { lat: 0, lng: 0 }}
+              center={
+                isPickedUp
+                  ? dropoffLocation || { lat: 0, lng: 0 }
+                  : pickupLocation || { lat: 0, lng: 0 }
+              }
               zoom={12}
               onLoad={onMapLoad}
               options={mapOptions}
             >
               <Marker position={driverLocation} label="Driver" />
-              {pickupLocation && <Marker position={pickupLocation} label="Pickup" />}
+              {isPickedUp
+                ? dropoffLocation && (
+                    <Marker position={dropoffLocation} label="Dropoff" />
+                  )
+                : pickupLocation && (
+                    <Marker position={pickupLocation} label="Pickup" />
+                  )}
               {directions && <DirectionsRenderer directions={directions} />}
             </GoogleMap>
           </LoadScript>
           <div className="absolute sm:bg-transparent bg-white h-[15vh] z-10 w-[95%] bottom-5 px-5 space-y-2 pt-4 ml-2 rounded-[8px]">
             {rideDetails.user ? (
-              <div>
+              <div className="flex items-center justify-between">
                 <div>{rideDetails.user.name}</div>
+                <p>{eta}</p>
               </div>
             ) : (
               <p>Loading user details...</p>
             )}
             <div className="flex items-center justify-between">
               <div>
-                <button className="py-2 pl-4 pr-4 bg-black text-white rounded-md">
-                  Picked Up
-                </button>
+                {!isPickedUp ? (
+                  <button
+                    onClick={handlePickedUp}
+                    className="py-2 pl-4 pr-4 bg-black text-white rounded-md"
+                  >
+                    Picked Up
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleRideComplete}
+                    className="py-2 pl-4 pr-4 bg-black text-white rounded-md"
+                  >
+                    Complete Ride
+                  </button>
+                )}
               </div>
               <div>
                 <button

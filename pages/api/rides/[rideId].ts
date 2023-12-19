@@ -9,14 +9,14 @@ export default async function handler(
 ) {
   const { rideId } = req.query;
 
-  if (req.method === 'GET') {
-    try {
+  try {
+    if (req.method === 'GET') {
       const ride = await prisma.ride.findUnique({
         where: {
           id: parseInt(rideId as string),
         },
         include: {
-          user: true,
+          user: true, 
         },
       });
 
@@ -25,11 +25,27 @@ export default async function handler(
       }
 
       res.status(200).json(ride);
-    } catch (error) {
-      res.status(500).json({ message: 'Error retrieving ride details' });
+    } else if (req.method === 'PATCH') {
+
+      const { status, dropoffTime } = req.body; 
+
+      const updatedRide = await prisma.ride.update({
+        where: {
+          id: parseInt(rideId as string),
+        },
+        data: {
+          status, 
+          dropoffTime: dropoffTime ? new Date(dropoffTime) : null, 
+        },
+      });
+
+      res.status(200).json(updatedRide);
+    } else {
+      res.setHeader('Allow', ['GET', 'PATCH']);
+      res.status(405).end(`Method ${req.method} Not Allowed`);
     }
-  } else {
-    res.setHeader('Allow', ['GET']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+  } catch (error) {
+    const errorMessage = (error as Error).message;
+    res.status(500).json({ message: 'Internal server error', error: errorMessage });
   }
 }

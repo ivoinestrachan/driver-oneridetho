@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
+import useSWR from 'swr';
 import {
   GoogleMap,
   LoadScript,
@@ -33,6 +34,7 @@ interface Ride {
   dropoffLocation: any;
   fare: number;
   user: User;
+  status: string;
 }
 
 const RidePage = () => {
@@ -47,7 +49,16 @@ const RidePage = () => {
   const [eta, setEta] = useState("");
   const [dropoffLocation, setDropoffLocation] = useState(null);
   const [isPickedUp, setIsPickedUp] = useState(false);
+  const [rideCancelled, setRideCancelled] = useState(false);
+  const fetcher = (url: string) => axios.get(url).then(res => res.data);
+  const { data: swrRideDetails, error: rideError } = useSWR(rideId ? `/api/rides/${rideId}` : null, fetcher);
 
+  useEffect(() => {
+    if (swrRideDetails?.status === 'Cancelled') {
+      alert("Ride has been cancelled");
+      router.push('/dashboard');
+    }
+  }, [swrRideDetails, router]);
   const mapRef = useRef();
 
   const onMapLoad = useCallback((map: any) => {
@@ -109,6 +120,7 @@ const RidePage = () => {
         try {
           const response = await axios.get(`/api/rides/${rideId}`);
           const fetchedRideDetails = response.data;
+  
           setRideDetails(fetchedRideDetails);
 
           const coordinates = await fetchCoordinates(
@@ -126,7 +138,9 @@ const RidePage = () => {
       }
     };
     fetchRideDetails();
-  }, [rideId]);
+  }, [rideId, router]); 
+
+
 
   useEffect(() => {
     const updateDirections = () => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
-import useSWR from 'swr';
+import useSWR from "swr";
 import {
   GoogleMap,
   LoadScript,
@@ -50,13 +50,16 @@ const RidePage = () => {
   const [dropoffLocation, setDropoffLocation] = useState(null);
   const [isPickedUp, setIsPickedUp] = useState(false);
   const [rideCancelled, setRideCancelled] = useState(false);
-  const fetcher = (url: string) => axios.get(url).then(res => res.data);
-  const { data: swrRideDetails, error: rideError } = useSWR(rideId ? `/api/rides/${rideId}` : null, fetcher);
+  const fetcher = (url: string) => axios.get(url).then((res) => res.data);
+  const { data: swrRideDetails, error: rideError } = useSWR(
+    rideId ? `/api/rides/${rideId}` : null,
+    fetcher
+  );
 
   useEffect(() => {
-    if (swrRideDetails?.status === 'Cancelled') {
+    if (swrRideDetails?.status === "Cancelled") {
       alert("Ride has been cancelled");
-      router.push('/dashboard');
+      router.push("/dashboard");
     }
   }, [swrRideDetails, router]);
   const mapRef = useRef();
@@ -120,7 +123,7 @@ const RidePage = () => {
         try {
           const response = await axios.get(`/api/rides/${rideId}`);
           const fetchedRideDetails = response.data;
-  
+
           setRideDetails(fetchedRideDetails);
 
           const coordinates = await fetchCoordinates(
@@ -138,9 +141,7 @@ const RidePage = () => {
       }
     };
     fetchRideDetails();
-  }, [rideId, router]); 
-
-
+  }, [rideId, router]);
 
   useEffect(() => {
     const updateDirections = () => {
@@ -180,10 +181,17 @@ const RidePage = () => {
     return () => clearInterval(intervalId);
   }, [driverLocation, pickupLocation, dropoffLocation, isPickedUp]);
 
-  const openInMaps = () => {
-    if (pickupLocation) {
+  const openInMaps = (locationType: any) => {
+    let location;
+    if (locationType === "pickup" && pickupLocation) {
+      location = pickupLocation;
+    } else if (locationType === "dropoff" && dropoffLocation) {
+      location = dropoffLocation;
+    }
+
+    if (location) {
       //@ts-ignore
-      const destination = `${pickupLocation.lat},${pickupLocation.lng}`;
+      const destination = `${location.lat},${location.lng}`;
       const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
       window.open(url, "_blank");
     }
@@ -292,9 +300,11 @@ const RidePage = () => {
               <div>
                 <button
                   className="py-2 pl-4 pr-4 bg-black text-white rounded-md"
-                  onClick={openInMaps}
+                  onClick={() =>
+                    isPickedUp ? openInMaps("dropoff") : openInMaps("pickup")
+                  }
                 >
-                  Open in Maps
+                  {isPickedUp ? "Open in Maps" : "Open in Maps"}
                 </button>
               </div>
             </div>

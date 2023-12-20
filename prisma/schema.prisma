@@ -92,8 +92,8 @@ model Ride {
 
 model Location {
   id     Int     @id @default(autoincrement())
-  lat    Float
-  long   Float
+  lat    Json
+  long   Json
   Driver Driver?
 }
 

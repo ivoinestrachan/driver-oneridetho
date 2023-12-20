@@ -43,10 +43,40 @@ const Dashboard = () => {
 
   const { data: session } = useSession();
   const router = useRouter();
+  const { rideId } = router.query;
+
 
   const onMarkerClick = (ride: Ride) => {
     setSelectedRide(ride);
   };
+
+  const fetchRideById = async (rideId: any) => {
+    try {
+      const response = await fetch(`/api/rides/${rideId}`);
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+      return await response.json();
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      }
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    if (rideId) {
+      (async () => {
+        setIsLoading(true);
+        const ride = await fetchRideById(rideId);
+        if (ride) {
+          setSelectedRide(ride);
+        }
+        setIsLoading(false);
+      })();
+    }
+  }, [rideId]);
 
   const acceptRide = async (rideId: number) => {
     setIsLoading(true);
@@ -75,6 +105,38 @@ const Dashboard = () => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    const fetchRideDetails = async () => {
+      if (!rideId) return;
+
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/rides/${rideId}`);
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`);
+        }
+        const rideData = await response.json();
+
+        if (rideData.isAccepted) {
+          alert("This ride has already been accepted by another driver.");
+          setSelectedRide(null); 
+        router.push("/dashboard")
+        } else {
+          setSelectedRide(rideData);
+        }
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRideDetails();
+  }, [rideId]);
+
 
   useEffect(() => {
     const fetchUnacceptedRides = async () => {

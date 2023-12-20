@@ -9,26 +9,26 @@ datasource db {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  name      String
-  photoUrl  String?
-  dob       DateTime
-  email     String    @unique
-  rating    Float?    @default(5)
-  phone     String?   @unique
-  gender    Gender?
-  account   Account?
-  bookings  Booking[]
-  rides     Ride[]    @relation("UserRides")
-  sessions  Session[] @relation("UserSessions")
+  id       Int       @id @default(autoincrement())
+  name     String
+  photoUrl String?
+  dob      DateTime
+  email    String    @unique
+  rating   Float?    @default(5)
+  phone    String?   @unique
+  gender   Gender?
+  account  Account?
+  bookings Booking[]
+  rides    Ride[]    @relation("UserRides")
+  sessions Session[] @relation("UserSessions")
 }
 
 model Account {
-  id      Int    @id @default(autoincrement())
-  userId  Int    @unique
-  email   String @unique
+  id       Int    @id @default(autoincrement())
+  userId   Int    @unique
+  email    String @unique
   password String
-  user    User   @relation(fields: [userId], references: [id])
+  user     User   @relation(fields: [userId], references: [id])
 }
 
 model Session {
@@ -54,20 +54,21 @@ model Booking {
 }
 
 model Driver {
-  id           Int       @id @default(autoincrement())
-  name         String
-  photoUrl     String?
-  carType      String
-  licensePlate String
-  rating       Float?    @default(5)
-  email        String    @unique
-  password     String
-  phone        String?   @unique
-  carImageUrl  String?
-  locationId   Int? @unique
-  location     Location? @relation(fields: [locationId], references: [id])
-  bookings     Booking[]
-  rides        Ride[]    @relation("DriverRides")
+  id              Int       @id @default(autoincrement())
+  name            String
+  photoUrl        String?
+  carType         String
+  licensePlate    String
+  rating          Float?    @default(5)
+  email           String    @unique
+  password        String
+  phone           String?   @unique
+  carImageUrl     String?
+  locationId      Int?      @unique
+  numberOfRatings Int       @default(0)
+  bookings        Booking[]
+  location        Location? @relation(fields: [locationId], references: [id])
+  rides           Ride[]    @relation("DriverRides")
 }
 
 model Ride {

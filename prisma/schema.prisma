@@ -65,7 +65,7 @@ model Driver {
   phone           String?   @unique
   carImageUrl     String?
   locationId      Int?      @unique
-  numberOfRatings Int       @default(0)
+  numberOfRatings Int?      @default(0)
   bookings        Booking[]
   location        Location? @relation(fields: [locationId], references: [id])
   rides           Ride[]    @relation("DriverRides")

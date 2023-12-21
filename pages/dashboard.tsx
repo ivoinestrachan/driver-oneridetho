@@ -40,11 +40,12 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
+  const [pickupAddress, setPickupAddress] = useState("");
+  const [dropoffAddress, setDropoffAddress] = useState("");
 
   const { data: session } = useSession();
   const router = useRouter();
   const { rideId } = router.query;
-
 
   const onMarkerClick = (ride: Ride) => {
     setSelectedRide(ride);
@@ -120,8 +121,8 @@ const Dashboard = () => {
 
         if (rideData.isAccepted) {
           alert("This ride has already been accepted by another driver.");
-          setSelectedRide(null); 
-        router.push("/dashboard")
+          setSelectedRide(null);
+          router.push("/dashboard");
         } else {
           setSelectedRide(rideData);
         }
@@ -136,7 +137,6 @@ const Dashboard = () => {
 
     fetchRideDetails();
   }, [rideId]);
-
 
   useEffect(() => {
     const fetchUnacceptedRides = async () => {
@@ -175,6 +175,50 @@ const Dashboard = () => {
   const isTextualAddress = (location: any) => {
     return isNaN(parseFloat(location));
   };
+
+  useEffect(() => {
+    const fetchAddress = async (lat: number, lng: number) => {
+      try {
+        const response = await fetch(`/api/reversegeo?lat=${lat}&lng=${lng}`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch address: ${response.status}`);
+        }
+        const data = await response.json();
+        return data.address;
+      } catch (error) {
+        console.error("Error fetching address:", error);
+        return "Address not found";
+      }
+    };
+
+    if (selectedRide && selectedRide.pickupLocation) {
+      const { lat, lng } = selectedRide.pickupLocation;
+      fetchAddress(lat, lng)
+        .then((address) => {
+          setPickupAddress(shortenAddress(address));
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
+    }
+
+    if (selectedRide && selectedRide.dropoffLocation) {
+      setDropoffAddress(shortenAddress(selectedRide.dropoffLocation));
+    }
+  }, [selectedRide]);
+
+  function removePlusCode(fullAddress: string): string {
+    return fullAddress.trim();
+  }
+
+  function shortenAddress(fullAddress: string): string {
+    const cleanedAddress = removePlusCode(fullAddress);
+    const parts = cleanedAddress.split(",");
+    if (parts.length > 3) {
+      return `${parts[0].trim()}, ${parts[1].trim()}`;
+    }
+    return cleanedAddress;
+  }
 
   useEffect(() => {
     const fetchRides = async () => {
@@ -227,25 +271,22 @@ const Dashboard = () => {
           />
         ))}
         {selectedRide && (
-          <div className="absolute bottom-0 bg-white w-full h-[18vh] pt-4 rounded-t-[16px]">
+          <div className="absolute bottom-0 bg-white w-full h-[25vh] pt-4 rounded-t-[16px]">
             <div className="text-center">
-              <div>{selectedRide.user.name}</div>
-              <div className="font-bold text-[20px]">${selectedRide.fare}</div>
-              <div className="flex items-center gap-2 justify-center">
-                <span>
-                  <HiMiniStar />  
-                </span>
-                {selectedRide.user.rating}
-              </div>
+              <button
+                onClick={() => acceptRide(selectedRide.id)}
+                className="rounded-full bg-black text-white py-3 pl-10 pr-10 text-center flashing-border"
+              >
+                {selectedRide.user.name}
+              </button>
+
+              <div className="font-bold text-[24px]">${selectedRide.fare}</div>
             </div>
 
-            <div className="flex justify-center">
-              <button
-                className="py-3 w-[90%] bg-black rounded-md text-white  text-center mt-2"
-                onClick={() => acceptRide(selectedRide.id)}
-              >
-                Accept
-              </button>
+            <div className="px-2 mt-2">
+              <li>{pickupAddress}</li>
+              <div className="border-l-2 h-5 border-black"></div>
+              <li>{dropoffAddress}</li>
             </div>
           </div>
         )}

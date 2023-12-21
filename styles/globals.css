@@ -20,3 +20,16 @@
     height: 39%;
   }
   
+  .flashing-border {
+    animation: flashing 1s infinite alternate;
+  }
+  
+  @keyframes flashing {
+    0% {
+      border: 2px solid transparent;
+    }
+    100% {
+      border: 2px solid cyan; 
+    }
+  }
+  

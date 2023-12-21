@@ -67,7 +67,7 @@ model Driver {
   locationId      Int?      @unique
   numberOfRatings Int?      @default(0)
   bookings        Booking[]
- location     Location? 
+  location        Location?
   rides           Ride[]    @relation("DriverRides")
 }
 
@@ -95,10 +95,9 @@ model Location {
   id       Int     @id @default(autoincrement())
   lat      Json
   long     Json
-  Driver   Driver? @relation(fields: [driverId], references: [id])
   driverId Int?    @unique
+  Driver   Driver? @relation(fields: [driverId], references: [id])
 }
-
 
 enum Gender {
   Male

@@ -307,7 +307,7 @@ const RidePage = () => {
               {directions && <DirectionsRenderer directions={directions} />}
             </GoogleMap>
           </LoadScript>
-          <div className="absolute sm:bg-transparent bg-white h-[20vh] z-10  bottom-0 px-5 space-y-2 pt-4  rounded-[8px] w-full">
+          <div className="absolute sm:bg-transparent bg-white h-[20vh] z-10  bottom-0 px-5 space-y-2 pt-4  rounded-[8px] w-full overflow-y-hidden">
             {rideDetails.user ? (
               <div className="flex items-center justify-between">
                 <div>

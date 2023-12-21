@@ -42,6 +42,7 @@ export default function Home() {
             placeholder="email"
             type="email"
             value={email}
+            autoComplete='off'
             onChange={(e) => setEmail(e.target.value)}
             className='text-black'
           />

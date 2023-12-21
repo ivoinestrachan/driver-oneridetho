@@ -72,18 +72,41 @@ const RidePage = () => {
     mapRef.current = map;
   }, []);
 
-  const updateDriverLocation = async (lat: number, lng: number) => {
+  const updateDriverLocation = useCallback(async (lat: number, lng: number) => {
     try {
       const driverId = session?.user.id;
-      
       await axios.patch('/api/drivers/location', {
         driverId,
         location: { lat, lng }
       });
+      setDriverLocation({ lat, lng }); 
     } catch (error) {
       console.error('Error updating driver location:', error);
     }
-  };
+  }, [session?.user.id]);
+
+  useEffect(() => {
+    let watchId: number | undefined;
+    if (navigator.geolocation) {
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          updateDriverLocation(latitude, longitude);
+        },
+        (error) => {
+          console.error('Error watching position:', error);
+        },
+        { enableHighAccuracy: true } 
+      );
+    }
+
+    // Clean up
+    return () => {
+      if (watchId !== undefined) navigator.geolocation.clearWatch(watchId);
+    };
+  }, [updateDriverLocation]);
+
+
   
 
   const fetchCoordinates = async (address: any) => {
@@ -258,25 +281,7 @@ const RidePage = () => {
     <div>
       {rideDetails && (
         <>
-          <div>
-            <input
-              type="text"
-              placeholder="Enter Driver's Latitude"
-              value={manualDriverLat}
-              onChange={(e) => setManualDriverLat(e.target.value)}
-              className="hidden"
-            />
-            <input
-              type="text"
-              placeholder="Enter Driver's Longitude"
-              value={manualDriverLng}
-              onChange={(e) => setManualDriverLng(e.target.value)}
-              className="hidden"
-            />
-            <button onClick={() => getCurrentLocation()} className="py-2">
-              Get Current Location
-            </button>
-          </div>
+       
 
           <LoadScript googleMapsApiKey={process.env.API_KEY || ""}>
             <GoogleMap

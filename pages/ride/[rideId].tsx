@@ -9,6 +9,7 @@ import {
   DirectionsRenderer,
 } from "@react-google-maps/api";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
 
 const mapContainerStyle = {
   width: "100%",
@@ -53,6 +54,7 @@ const RidePage = () => {
   const [isPickedUp, setIsPickedUp] = useState(false);
   const [rideCancelled, setRideCancelled] = useState(false);
   const fetcher = (url: string) => axios.get(url).then((res) => res.data);
+  const { data: session } = useSession();
   const { data: swrRideDetails, error: rideError } = useSWR(
     rideId ? `/api/rides/${rideId}` : null,
     fetcher
@@ -69,6 +71,20 @@ const RidePage = () => {
   const onMapLoad = useCallback((map: any) => {
     mapRef.current = map;
   }, []);
+
+  const updateDriverLocation = async (lat: number, lng: number) => {
+    try {
+      const driverId = session?.user.id;
+      
+      await axios.patch('/api/drivers/location', {
+        driverId,
+        location: { lat, lng }
+      });
+    } catch (error) {
+      console.error('Error updating driver location:', error);
+    }
+  };
+  
 
   const fetchCoordinates = async (address: any) => {
     try {
@@ -205,13 +221,15 @@ const RidePage = () => {
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setManualDriverLat(position.coords.latitude.toString());
-          setManualDriverLng(position.coords.longitude.toString());
-          setDriverLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+  
+          setManualDriverLat(lat.toString());
+          setManualDriverLng(lng.toString());
+          setDriverLocation({ lat, lng });
+  
+          await updateDriverLocation(lat, lng);
         },
         (error) => {
           console.error("Error getting current location:", error);
@@ -221,6 +239,7 @@ const RidePage = () => {
       console.error("Geolocation is not supported by this browser.");
     }
   };
+  
 
   const [showOverlay, setShowOverlay] = useState(false);
 

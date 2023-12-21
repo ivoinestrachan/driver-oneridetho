@@ -51,7 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (updatedRide.driver && updatedRide.user && updatedRide.user.phone) {
         await twilioClient.messages.create({
-          body: `Good news! Your ride has been confirmed.\n\nDriver: ${updatedRide.driver.name}\nCar: ${updatedRide.driver.carType} - ${updatedRide.driver.licensePlate}\nEstimated Pickup Time: ${formatTime(updatedRide.pickupTime)}\n\nFor more details: https://oneridetho.vercel.app//rides/${updatedRide.id}\n\nHave a safe and pleasant journey!`,
+          body: `Good news! Your ride has been confirmed.\n\nDriver: ${updatedRide.driver.name}\nCar: ${updatedRide.driver.carType} - ${updatedRide.driver.licensePlate}\nFor more details: https://oneridetho.vercel.app//rides/${updatedRide.id}\n\nHave a safe and pleasant journey!`,
           from: process.env.TWILIO_PHONE_NUMBER,
           to: updatedRide.user.phone
         });

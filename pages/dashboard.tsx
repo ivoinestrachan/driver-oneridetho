@@ -192,14 +192,7 @@ const Dashboard = () => {
     };
 
     if (selectedRide && selectedRide.pickupLocation) {
-      const { lat, lng } = selectedRide.pickupLocation;
-      fetchAddress(lat, lng)
-        .then((address) => {
-          setPickupAddress(shortenAddress(address));
-        })
-        .catch((error) => {
-          console.error("Error:", error);
-        });
+      setPickupAddress(shortenAddress(selectedRide.pickupLocation));
     }
 
     if (selectedRide && selectedRide.dropoffLocation) {

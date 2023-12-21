@@ -271,7 +271,7 @@ const Dashboard = () => {
           />
         ))}
         {selectedRide && (
-          <div className="absolute bottom-0 bg-white w-full h-[25vh] pt-4 rounded-t-[16px] overflow-y-scroll">
+          <div className="absolute bottom-0 bg-white w-full h-[50vh] pt-4 rounded-t-[16px] overflow-y-scroll">
             <div className="text-center">
               <button
                 onClick={() => acceptRide(selectedRide.id)}

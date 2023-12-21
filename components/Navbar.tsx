@@ -2,6 +2,8 @@ import Image from "next/image";
 import logo from "../assets/logo.svg";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
+import { CiLogout } from "react-icons/ci";
+
 
 const Navbar = () => {
   const { data: session } = useSession();
@@ -37,8 +39,10 @@ const Navbar = () => {
                   className="rounded-full"
                 />
               </div>
-              <div>{session.user?.email}</div>
-              <div onClick={() => signOut()}>Logout</div>
+              <div>{session.user?.name}</div>
+              <div onClick={() => signOut()}>
+              <CiLogout size={24} color="red" />
+              </div>
             </div>
           )}
         </div>

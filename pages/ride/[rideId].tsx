@@ -8,6 +8,7 @@ import {
   Marker,
   DirectionsRenderer,
 } from "@react-google-maps/api";
+import Image from "next/image";
 
 const mapContainerStyle = {
   width: "100%",
@@ -25,6 +26,7 @@ interface User {
   id: number;
   name: string;
   rating: number;
+  photoUrl: string;
   phone: number;
 }
 
@@ -220,6 +222,16 @@ const RidePage = () => {
     }
   };
 
+  const [showOverlay, setShowOverlay] = useState(false);
+
+  const handlePhotoClick = () => {
+    setShowOverlay(true);
+  };
+
+  const handleOverlayClick = () => {
+    setShowOverlay(false);
+  };
+
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;
 
@@ -270,10 +282,29 @@ const RidePage = () => {
               {directions && <DirectionsRenderer directions={directions} />}
             </GoogleMap>
           </LoadScript>
-          <div className="absolute sm:bg-transparent bg-white h-[15vh] z-10 w-[95%] bottom-5 px-5 space-y-2 pt-4 ml-2 rounded-[8px]">
+          <div className="absolute sm:bg-transparent bg-white h-[20vh] z-10 w-[95%] bottom-5 px-5 space-y-2 pt-4 ml-2 rounded-[8px]">
             {rideDetails.user ? (
               <div className="flex items-center justify-between">
+                <div>
+                <div>
+                  <Image src={rideDetails.user.photoUrl} alt="pfp" width={50} height={50} className="rounded-full" 
+                  onClick={handlePhotoClick}
+                  />
+                </div>
+                {showOverlay && (
+            <div className="overlay" onClick={handleOverlayClick}>
+              <div className="overlay-content">
+                <Image
+                  src={rideDetails.user.photoUrl}
+                  alt="Profile Picture"
+                  layout="fill"
+                  className="rounded-full"
+                />
+              </div>
+            </div>
+          )}
                 <div>{rideDetails.user.name}</div>
+                </div>
                 <p>{eta}</p>
               </div>
             ) : (

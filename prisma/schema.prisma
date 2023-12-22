@@ -72,23 +72,25 @@ model Driver {
 }
 
 model Ride {
-  id              Int        @id @default(autoincrement())
-  pickupTime      DateTime
-  dropoffTime     DateTime?
-  fare            Float
-  tip             Float?     @default(5)
-  userId          Int
-  driverId        Int?
-  status          RideStatus
-  pickupLocation  Json
-  dropoffLocation Json
-  passengerCount  Int        @default(1)
-  isAccepted      Boolean?
-  isConfirmed     Boolean
-  paymentMethod   String
-  bookings        Booking[]
-  driver          Driver?    @relation("DriverRides", fields: [driverId], references: [id])
-  user            User       @relation("UserRides", fields: [userId], references: [id])
+  id                  Int        @id @default(autoincrement())
+  pickupTime          DateTime
+  dropoffTime         DateTime?
+  fare                Float
+  tip                 Float?     @default(5)
+  userId              Int
+  driverId            Int?
+  status              RideStatus
+  pickupLocation      Json
+  dropoffLocation     Json
+  passengerCount      Int        @default(1)
+  isAccepted          Boolean?
+  isConfirmed         Boolean
+  paymentMethod       String
+  isScheduled         Boolean    @default(false)
+  scheduledPickupTime DateTime?
+  bookings            Booking[]
+  driver              Driver?    @relation("DriverRides", fields: [driverId], references: [id])
+  user                User       @relation("UserRides", fields: [userId], references: [id])
 }
 
 model Location {
@@ -110,4 +112,5 @@ enum RideStatus {
   InProgress
   Completed
   Cancelled
+  Scheduled
 }

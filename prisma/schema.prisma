@@ -88,6 +88,9 @@ model Ride {
   paymentMethod       String
   isScheduled         Boolean    @default(false)
   scheduledPickupTime DateTime?
+  extraCharges        Float?     @default(0)
+  stopWaitTimes       Json?
+  stops               Json?
   bookings            Booking[]
   driver              Driver?    @relation("DriverRides", fields: [driverId], references: [id])
   user                User       @relation("UserRides", fields: [userId], references: [id])

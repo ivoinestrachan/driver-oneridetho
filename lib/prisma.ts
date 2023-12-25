@@ -1,9 +1,7 @@
 //@ts-nocheck
-import { PrismaClient } from '@prisma/client/edge'
-import { withAccelerate } from '@prisma/extension-accelerate'
+import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient().$extends(withAccelerate())
-
+let prisma: PrismaClient;
 
 if (process.env.NODE_ENV === 'production') {
   prisma = new PrismaClient();

@@ -3,11 +3,11 @@ import React, { useState, useEffect } from 'react';
 interface DailyEarning {
     date: string;
     total: number;
-  }
+}
 
 const DailyReport = () => {
     const [dailyEarnings, setDailyEarnings] = useState<DailyEarning[]>([]);
-    const [totalEarnings, setTotalEarnings] = useState<number>(0);
+    const [totalEarnings, setTotalEarnings] = useState<number | undefined>(undefined);
 
     useEffect(() => {
         fetchEarningsData();
@@ -21,13 +21,17 @@ const DailyReport = () => {
             if (data.daily) {
                 setDailyEarnings(data.daily);
             }
-            setTotalEarnings(data.total);
+            if (data.total !== undefined) {
+                setTotalEarnings(data.total);
+            } else {
+                console.error('Total earnings data is missing');
+            }
         } catch (error) {
             console.error('Failed to fetch earnings data:', error);
         }
     };
 
-    const paymentToOneRideTho = totalEarnings * 0.3;
+    const paymentToOneRideTho = totalEarnings ? totalEarnings * 0.3 : 0;
 
     return (
         <div>
@@ -42,7 +46,7 @@ const DailyReport = () => {
             ) : (
                 <p>Loading earnings data...</p>
             )}
-            <h3>Total Earnings up to Sunday: ${totalEarnings.toFixed(2)}</h3>
+            <h3>Total Earnings up to Sunday: ${totalEarnings !== undefined ? totalEarnings.toFixed(2) : 'Loading...'}</h3>
             <div>
                 <h3>Total Payment to OneRideTho: ${paymentToOneRideTho.toFixed(2)}</h3>
             </div>

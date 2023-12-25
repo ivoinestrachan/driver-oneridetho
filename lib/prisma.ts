@@ -4,7 +4,6 @@ import { withAccelerate } from '@prisma/extension-accelerate'
 
 const prisma = new PrismaClient().$extends(withAccelerate())
 
-let prisma: PrismaClient;
 
 if (process.env.NODE_ENV === 'production') {
   prisma = new PrismaClient();

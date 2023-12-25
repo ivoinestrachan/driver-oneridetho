@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { NextApiRequest, NextApiResponse } from 'next';
+import { getSession } from 'next-auth/react';
 
 const prisma = new PrismaClient();
 
@@ -7,10 +8,17 @@ export default async function earningsHandler(req: NextApiRequest, res: NextApiR
   if (req.method === 'GET') {
 
     try {
+      const session = await getSession({ req }); 
+      if (!session || !session.user.id) {
+        res.status(401).json({ message: 'Unauthorized' });
+        return;
+      }
+
+      const driverId = session.user.id;
 
       const rides = await prisma.ride.findMany({
         where: {
-          driverId: 2,
+          driverId: driverId,
           status: 'Completed'
         }
       });

@@ -198,6 +198,7 @@ const RidePage = () => {
       if (!destination) return;
 
       const directionsService = new google.maps.DirectionsService();
+      console.log("starting directions to route",Date.now())
       directionsService.route(
         {
           origin: driverLocation,
@@ -208,18 +209,21 @@ const RidePage = () => {
           if (status === google.maps.DirectionsStatus.OK) {
             //@ts-ignore
             setDirections(result);
-
+            console.log("setDirections finished",Date.now())
             //@ts-ignore
             const duration = result.routes[0].legs[0].duration.text;
+            console.log("duration found here",Date.now())
             setEta(duration);
+            console.log("eta done",Date.now())
           } else {
+            console.log("fail to fetch directions",Date.now())
             console.error(`Error fetching directions: ${status}`);
           }
         }
       );
     };
 
-    const intervalId = setInterval(updateDirections, 10000);
+    const intervalId = setInterval(updateDirections, 0);
     return () => clearInterval(intervalId);
   }, [driverLocation, pickupLocation, dropoffLocation, isPickedUp]);
 

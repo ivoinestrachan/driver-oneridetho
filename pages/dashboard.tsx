@@ -23,6 +23,7 @@ interface Ride {
   dropoffLocation: any;
   fare: number;
   user: User;
+  paymentMethod: string;
 }
 
 const containerStyle = {
@@ -273,7 +274,16 @@ const Dashboard = () => {
                 {selectedRide.user.name}
               </button>
 
-              <div className="font-bold text-[24px]">${selectedRide.fare}</div>
+              <div className="flex items-center justify-center gap-2">
+                <div className="font-bold text-[24px]">
+                  ${selectedRide.fare}
+                </div>
+                {selectedRide.paymentMethod === "Card" && (
+                  <span className="text-[20px] rounded-full border-2 border-black  pl-3 pr-3">
+                    💳 Paid
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="px-2 mt-2">

@@ -72,18 +72,82 @@ const RidePage = () => {
     mapRef.current = map;
   }, []);
 
-  const updateDriverLocation = useCallback(async (lat: number, lng: number) => {
-    try {
-      const driverId = session?.user.id;
-      await axios.patch('/api/drivers/location', {
-        driverId,
-        location: { lat, lng }
-      });
-      setDriverLocation({ lat, lng }); 
-    } catch (error) {
-      console.error('Error updating driver location:', error);
+  const [timer, setTimer] = useState(600);
+  const [timerActive, setTimerActive] = useState(false);
+  const [extraCharges, setExtraCharges] = useState(0);
+  const [initialPeriodPassed, setInitialPeriodPassed] = useState(false);
+
+
+  useEffect(() => {
+    let interval: number | undefined;
+  
+    if (timerActive) {
+      if (!initialPeriodPassed) {
+        interval = window.setInterval(() => {
+          setTimer(prevTimer => {
+            if (prevTimer - 1 <= 0) {
+              setInitialPeriodPassed(true);
+              notifyUser(); 
+            }
+            return Math.max(prevTimer - 1, 0); 
+          });
+        }, 1000);
+      } else {
+        interval = window.setInterval(() => {
+          setExtraCharges(prevCharges => prevCharges + 1);
+        }, 60000);
+      }
+    } else {
+      clearInterval(interval);
     }
-  }, [session?.user.id]);
+  
+    return () => clearInterval(interval);
+  }, [timerActive, timer, initialPeriodPassed]);
+  
+  
+  const handleStartStopTimer = () => {
+    if (timerActive) {
+      setTimerActive(false);
+    } else {
+      if (!initialPeriodPassed && timer <= 0) {
+        setTimer(600);
+        setInitialPeriodPassed(false);
+      }
+      setTimerActive(true);
+    }
+  };
+  
+
+  const formatTime = () => {
+    const minutes = Math.floor(timer / 60);
+    const seconds = timer % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const notifyUser = async () => {
+    try {
+      await axios.post("/api/sendNotification", { rideId: rideDetails?.id });
+      console.log("Notification sent to user");
+    } catch (error) {
+      console.error("Error sending notification:", error);
+    }
+  };
+
+  const updateDriverLocation = useCallback(
+    async (lat: number, lng: number) => {
+      try {
+        const driverId = session?.user.id;
+        await axios.patch("/api/drivers/location", {
+          driverId,
+          location: { lat, lng },
+        });
+        setDriverLocation({ lat, lng });
+      } catch (error) {
+        console.error("Error updating driver location:", error);
+      }
+    },
+    [session?.user.id]
+  );
 
   useEffect(() => {
     let watchId: number | undefined;
@@ -94,9 +158,9 @@ const RidePage = () => {
           updateDriverLocation(latitude, longitude);
         },
         (error) => {
-          console.error('Error watching position:', error);
+          console.error("Error watching position:", error);
         },
-        { enableHighAccuracy: true } 
+        { enableHighAccuracy: true }
       );
     }
 
@@ -105,9 +169,6 @@ const RidePage = () => {
       if (watchId !== undefined) navigator.geolocation.clearWatch(watchId);
     };
   }, [updateDriverLocation]);
-
-
-  
 
   const fetchCoordinates = async (address: any) => {
     try {
@@ -183,7 +244,6 @@ const RidePage = () => {
     };
     fetchRideDetails();
   }, [rideId, router]);
-  
 
   useEffect(() => {
     const updateDirections = () => {
@@ -247,11 +307,11 @@ const RidePage = () => {
         async (position) => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
-  
+
           setManualDriverLat(lat.toString());
           setManualDriverLng(lng.toString());
           setDriverLocation({ lat, lng });
-  
+
           await updateDriverLocation(lat, lng);
         },
         (error) => {
@@ -262,7 +322,6 @@ const RidePage = () => {
       console.error("Geolocation is not supported by this browser.");
     }
   };
-  
 
   const [showOverlay, setShowOverlay] = useState(false);
 
@@ -281,8 +340,6 @@ const RidePage = () => {
     <div>
       {rideDetails && (
         <>
-       
-
           <LoadScript googleMapsApiKey={process.env.API_KEY || ""}>
             <GoogleMap
               mapContainerStyle={mapContainerStyle}
@@ -310,26 +367,40 @@ const RidePage = () => {
             {rideDetails.user ? (
               <div className="flex items-center justify-between">
                 <div>
+                  <div>
+                    <Image
+                      src={rideDetails.user.photoUrl}
+                      alt="pfp"
+                      width={50}
+                      height={50}
+                      className="rounded-full"
+                      onClick={handlePhotoClick}
+                    />
+                  </div>
+                  {showOverlay && (
+                    <div className="overlay" onClick={handleOverlayClick}>
+                      <div className="overlay-content">
+                        <Image
+                          src={rideDetails.user.photoUrl}
+                          alt="Profile Picture"
+                          layout="fill"
+                          className="rounded-full"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  <div>{rideDetails.user.name}</div>
+                </div>
                 <div>
-                  <Image src={rideDetails.user.photoUrl} alt="pfp" width={50} height={50} className="rounded-full" 
-                  onClick={handlePhotoClick}
-                  />
-                </div>
-                {showOverlay && (
-            <div className="overlay" onClick={handleOverlayClick}>
-              <div className="overlay-content">
-                <Image
-                  src={rideDetails.user.photoUrl}
-                  alt="Profile Picture"
-                  layout="fill"
-                  className="rounded-full"
-                />
-              </div>
-            </div>
+                  <button  onClick={handleStartStopTimer}>
+                    {timerActive ? `${formatTime()}` : "Stops Timer"}
+                  </button>
+                  {initialPeriodPassed && (
+            <p>Extra Charges: ${extraCharges}</p>
           )}
-                <div>{rideDetails.user.name}</div>
+
+                  <p>{eta}</p>
                 </div>
-                <p>{eta}</p>
               </div>
             ) : (
               <p>Loading user details...</p>

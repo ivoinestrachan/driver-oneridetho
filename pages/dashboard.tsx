@@ -24,6 +24,7 @@ interface Ride {
   fare: number;
   user: User;
   paymentMethod: string;
+  stops: Stop[];
 }
 
 const containerStyle = {
@@ -266,6 +267,30 @@ const Dashboard = () => {
         ))}
         {selectedRide && (
           <div className="absolute bottom-0 bg-white w-full h-[30vh] pt-4 pb-2 rounded-t-[16px] overflow-y-scroll">
+{(() => {
+      let stops;
+      if (typeof selectedRide.stops === 'string') {
+        try {
+          stops = JSON.parse(selectedRide.stops);
+        } catch (e) {
+          console.error('Error parsing stops data:', e);
+          stops = [];
+        }
+      } else {
+        stops = selectedRide.stops;
+      }
+
+      return (
+        <>
+          {Array.isArray(stops) && stops.length > 0 && (
+            <div className="text-center">
+              Ride has {stops.length} stop{stops.length > 1 ? 's' : ''}
+            </div>
+          )}
+        </>
+      );
+    })()}
+
             <div className="text-center">
               <button
                 onClick={() => acceptRide(selectedRide.id)}

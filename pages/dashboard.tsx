@@ -24,6 +24,7 @@ interface Ride {
   fare: number;
   user: User;
   paymentMethod: string;
+  //@ts-ignore
   stops: Stop[];
 }
 
@@ -45,7 +46,7 @@ const Dashboard = () => {
   const [pickupAddress, setPickupAddress] = useState("");
   const [dropoffAddress, setDropoffAddress] = useState("");
 
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const { rideId } = router.query;
 
@@ -53,6 +54,12 @@ const Dashboard = () => {
     setSelectedRide(ride);
   };
 
+  useEffect(() => {
+    if (status !== "loading" && !session) {
+      alert("You must be logged in to view this page");
+      router.push('/');
+    }
+  }, [session, status, router]);
   const fetchRideById = async (rideId: any) => {
     try {
       const response = await fetch(`/api/rides/${rideId}`);
@@ -251,6 +258,7 @@ const Dashboard = () => {
   };
 
   return (
+    session ? (
     <LoadScript googleMapsApiKey={process.env.API_KEY || ""}>
       <GoogleMap
         mapContainerStyle={containerStyle}
@@ -320,6 +328,10 @@ const Dashboard = () => {
         )}
       </GoogleMap>
     </LoadScript>
+        ) : (
+          <div>Loading...</div>
+        )
+    
   );
 };
 

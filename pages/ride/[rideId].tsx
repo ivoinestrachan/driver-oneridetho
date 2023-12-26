@@ -30,6 +30,10 @@ interface User {
   photoUrl: string;
   phone: number;
 }
+interface Location {
+  lat: number;
+  lng: number;
+}
 
 interface Ride {
   id: number;
@@ -38,6 +42,7 @@ interface Ride {
   fare: number;
   user: User;
   status: string;
+  stops?: Location[];
 }
 
 const RidePage = () => {
@@ -282,21 +287,37 @@ const RidePage = () => {
     return () => clearInterval(intervalId);
   }, [driverLocation, pickupLocation, dropoffLocation, isPickedUp]);
 
-  const openInMaps = (locationType: any) => {
-    let location;
-    if (locationType === "pickup" && pickupLocation) {
-      location = pickupLocation;
-    } else if (locationType === "dropoff" && dropoffLocation) {
-      location = dropoffLocation;
-    }
-
-    if (location) {
-      //@ts-ignore
-      const destination = `${location.lat},${location.lng}`;
-      const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+  
+  const openInMaps = () => {
+    if (rideDetails && rideDetails.pickupLocation && rideDetails.dropoffLocation) {
+      const baseMapsUrl = 'https://www.google.com/maps/dir/?api=1';
+      let waypoints = '';
+  
+      let stops = [];
+      if (rideDetails.stops) {
+        try {
+          stops = Array.isArray(rideDetails.stops) ? rideDetails.stops : JSON.parse(rideDetails.stops);
+        } catch (error) {
+          console.error("Error parsing stops:", error);
+        }
+      }
+  
+      if (stops.length > 0) {
+        //@ts-ignore
+        waypoints = stops.map(stop => `${stop.lat},${stop.lng}`).join('|');
+      }
+  
+      const pickupCoords = `${rideDetails.pickupLocation},${rideDetails.pickupLocation}`;
+      const dropoffCoords = `${rideDetails.dropoffLocation},${rideDetails.dropoffLocation}`;
+      const url = `${baseMapsUrl}&origin=${pickupCoords}&destination=${dropoffCoords}${waypoints ? `&waypoints=${waypoints}` : ''}`;
+  
       window.open(url, "_blank");
     }
   };
+
+
+  
+  
 
   const [manualDriverLat, setManualDriverLat] = useState("");
   const [manualDriverLng, setManualDriverLng] = useState("");
@@ -426,9 +447,7 @@ const RidePage = () => {
               <div>
                 <button
                   className="py-2 pl-4 pr-4 bg-black text-white rounded-md"
-                  onClick={() =>
-                    isPickedUp ? openInMaps("dropoff") : openInMaps("pickup")
-                  }
+                  onClick={openInMaps}
                 >
                   {isPickedUp ? "Open in Maps" : "Open in Maps"}
                 </button>

@@ -1,3 +1,4 @@
+import { Spinner } from "@/components/Spinner";
 import {
   GoogleMap,
   InfoWindow,
@@ -75,9 +76,14 @@ const Dashboard = () => {
     }
   };
 
+  const [loadingRideId, setLoadingRideId] = useState<number | null>(null);
+
+
+
   useEffect(() => {
     if (rideId) {
       (async () => {
+       
         setIsLoading(true);
         const ride = await fetchRideById(rideId);
         if (ride) {
@@ -89,6 +95,7 @@ const Dashboard = () => {
   }, [rideId]);
 
   const acceptRide = async (rideId: number) => {
+    setLoadingRideId(rideId);
     setIsLoading(true);
     try {
       const driverId = session?.user.id;
@@ -113,6 +120,7 @@ const Dashboard = () => {
       }
     } finally {
       setIsLoading(false);
+      setLoadingRideId(null);
     }
   };
 
@@ -304,7 +312,11 @@ const Dashboard = () => {
                 onClick={() => acceptRide(selectedRide.id)}
                 className="rounded-full bg-black text-white py-3 pl-10 pr-10 text-center flashing-border"
               >
-                {selectedRide.user.name}
+                {loadingRideId === selectedRide.id ? (
+    <Spinner />
+  ) : (
+                selectedRide.user.name
+  )}
               </button>
 
               <div className="flex items-center justify-center gap-2">

@@ -36,3 +36,39 @@ body{
     }
   }
   
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+  
+  .w-8 {
+    width: 2rem; 
+  }
+  
+  .h-8 {
+    height: 2rem;
+  }
+  
+  .text-accent-default {
+    color: #4fd1c5; 
+  }
+  
+  .fill-beige {
+    fill: #f5f5dc; 
+  }
+  
+  
+  .svg-center {
+    display: block;
+    margin: auto;
+  }
+  

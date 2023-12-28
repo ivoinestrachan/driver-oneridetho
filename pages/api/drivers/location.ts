@@ -19,14 +19,14 @@ export default async function handler(
   
         const updatedLocation = await prisma.location.upsert({
           where: {
-            driverId: 2
+            driverId: driverId
           },
           update: {
             lat: location.lat,
             long: location.lng
           },
           create: {
-            driverId: 2,
+            driverId,
             lat: location.lat,
             long: location.lng
           }

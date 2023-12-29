@@ -31,7 +31,7 @@ const Navbar = () => {
           ) : (
             <div className="flex items-center gap-3">
               <div>
-                <Link href="/details">
+                <Link href="/task">
                 <Image
                   src={session.user?.image || "https://res.cloudinary.com/dxmrcocqb/image/upload/v1700749220/Social_Media_Chatting_Online_Blank_Profile_Picture_Head_And_Body_Icon_People_Standing_Icon_Grey_Background_generated_qnojdz.jpg"}
                   alt="pfp"

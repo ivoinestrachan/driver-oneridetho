@@ -177,6 +177,31 @@ const Dashboard = () => {
     fetchUnacceptedRides();
   }, []);
 
+  async function reverseGeocode(lat: number, lng: number) {
+    const apiKey = process.env.API_KEY;
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
+  
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+  
+      if (!data.error_message && data.results && data.results.length > 0) {
+        return data.results[0].formatted_address; 
+      } else {
+        console.error("Geocoding error:", data.error_message);
+        return "Address not found";
+      }
+    } catch (error) {
+      console.error("Error in reverse geocoding:", error);
+      return "Address not found";
+    }
+  }
+
+  function isCoordinateFormat(location: string) {
+    return location && typeof location === 'object' && 'lat' in location && 'lng' in location;
+  }
+  
+  
   const getCoordinates = async (address: any) => {
     const response = await fetch("/api/geocode", {
       method: "POST",
@@ -194,6 +219,27 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
+    const fetchAndSetAddress = async () => {
+      if (selectedRide && selectedRide.pickupLocation) {
+        let address;
+  
+        if (isCoordinateFormat(selectedRide.pickupLocation)) {
+        
+          address = await reverseGeocode(selectedRide.pickupLocation.lat, selectedRide.pickupLocation.lng);
+        } else {
+        
+          address = selectedRide.pickupLocation;
+        }
+  
+        setPickupAddress(address);
+      }
+    };
+  
+    fetchAndSetAddress();
+  }, [selectedRide]);
+  
+
+  useEffect(() => {
     const fetchAddress = async (lat: number, lng: number) => {
       try {
         const response = await fetch(`/api/reversegeo?lat=${lat}&lng=${lng}`);
@@ -208,27 +254,36 @@ const Dashboard = () => {
       }
     };
 
-    if (selectedRide && selectedRide.pickupLocation) {
-      setPickupAddress(shortenAddress(selectedRide.pickupLocation));
-    }
 
+    
     if (selectedRide && selectedRide.dropoffLocation) {
-      setDropoffAddress(shortenAddress(selectedRide.dropoffLocation));
+      const dropoffAddressString = typeof selectedRide.dropoffLocation === 'string' 
+        ? selectedRide.dropoffLocation 
+        : JSON.stringify(selectedRide.dropoffLocation);
+      setDropoffAddress(shortenAddress(dropoffAddressString));
     }
+    
   }, [selectedRide]);
 
   function removePlusCode(fullAddress: string): string {
-    return fullAddress.trim();
-  }
-
-  function shortenAddress(fullAddress: string): string {
-    const cleanedAddress = removePlusCode(fullAddress);
-    const parts = cleanedAddress.split(",");
-    if (parts.length > 3) {
-      return `${parts[0].trim()}, ${parts[1].trim()}`;
+    if (typeof fullAddress === 'string') {
+      return fullAddress.trim();
     }
-    return cleanedAddress;
+    return ''; 
   }
+  
+  function shortenAddress(fullAddress: string): string {
+    if (typeof fullAddress === 'string') {
+      const cleanedAddress = removePlusCode(fullAddress);
+      const parts = cleanedAddress.split(",");
+      if (parts.length > 3) {
+        return `${parts[0].trim()}, ${parts[1].trim()}`;
+      }
+      return cleanedAddress;
+    }
+    return ''; 
+  }
+  
 
   useEffect(() => {
     const fetchRides = async () => {

@@ -40,7 +40,7 @@ export default async function handler(
 
       if (status === 'InProgress' && updatedRide.user && updatedRide.user.phone) {
         await twilioClient.messages.create({
-          body: 'Your driver is outside. Please proceed to your pickup location.',
+          body: 'Your driver has arrived, you have 5 minutes to enter the vehicle, otherwise your ride will be cancelled.',
           from: process.env.TWILIO_PHONE_NUMBER,
           to: updatedRide.user.phone,
         });

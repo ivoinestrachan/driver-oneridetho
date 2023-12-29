@@ -15,6 +15,7 @@ export default async function handler(
           status: true,
           pickupLocation: true,
           dropoffLocation: true,
+          scheduledPickupTime: true,
         }
       });
       res.status(200).json(rides);

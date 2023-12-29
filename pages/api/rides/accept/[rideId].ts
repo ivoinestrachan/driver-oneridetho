@@ -9,18 +9,14 @@ function formatTime(date: any) {
   if (!date) return '';
 
   const d = new Date(date);
-
-  const options = { 
+  return d.toLocaleString('en-US', { 
     year: 'numeric', 
     month: 'long', 
     day: 'numeric', 
     hour: '2-digit', 
     minute: '2-digit', 
     hour12: true 
-  };
-
-  //@ts-ignore
-  return d.toLocaleString('en-US', options);
+  });
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -50,13 +46,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
       if (updatedRide.driver && updatedRide.user && updatedRide.user.phone) {
+        let bodyMessage;
+        if (updatedRide.isScheduled && updatedRide.scheduledPickupTime) {
+          const formattedTime = formatTime(updatedRide.scheduledPickupTime);
+          bodyMessage = `Your scheduled ride for ${formattedTime} has been confirmed! Your driver ${updatedRide.driver.name} will arrive in a ${updatedRide.driver.carType} with license plate ${updatedRide.driver.licensePlate}. Please visit https://oneridetho.vercel.app/rides/${updatedRide.id} for more details.\n\nHave a great trip!`;
+        } else {
+          bodyMessage = `Great news! Your ride with ${updatedRide.driver.name} has been confirmed. Your driver will be in a ${updatedRide.driver.carType} with license plate ${updatedRide.driver.licensePlate}. For more details about your ride, visit: https://oneridetho.vercel.app/rides/${updatedRide.id}\n\nWe wish you a safe and pleasant journey!`;
+        }
+
         await twilioClient.messages.create({
-            body: `Great news! Your ride with ${updatedRide.driver.name} has been confirmed. Your driver will be in a ${updatedRide.driver.carType} with license plate ${updatedRide.driver.licensePlate}. For more details about your ride, visit: https://oneridetho.vercel.app/rides/${updatedRide.id}\n\nWe wish you a safe and pleasant journey!`,
-            from: process.env.TWILIO_PHONE_NUMBER,
-            to: updatedRide.user.phone
+          body: bodyMessage,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: updatedRide.user.phone
         });
-    }
-    
+      }
 
       res.status(200).json({ message: 'Ride accepted successfully', updatedRide });
     } catch (error) {
@@ -68,5 +71,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
-
-

@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 export default function Home() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState(''); 
   const router = useRouter(); 
   const { data: session, status } = useSession();
 
@@ -16,6 +17,7 @@ export default function Home() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault(); 
+    setLoginError('');
     const result = await signIn('credentials', {
       redirect: false,
       email,
@@ -27,12 +29,14 @@ export default function Home() {
       router.push('/dashboard'); 
     } else if (result) {
       console.error('Failed to sign in:', result.error);
+      setLoginError('Invalid credentials. Please try again.'); 
     }
   };
 
   if (status === 'loading') {
     return <p>Loading...</p>;
   }
+
 
   return (
     <div>
@@ -62,6 +66,7 @@ export default function Home() {
           <button type="submit">Sign In</button>
         </div>
       </form>
+      {loginError && <div className="text-red-500">{loginError}</div>}
     </div>
   );
 }

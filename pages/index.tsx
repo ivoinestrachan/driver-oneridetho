@@ -39,8 +39,9 @@ export default function Home() {
 
 
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
+    <>
+    <div className='flex justify-center mt-[150px]'>
+      <form onSubmit={handleSubmit}  className='space-y-4'>
         <div>
           <input
             placeholder="email"
@@ -48,7 +49,7 @@ export default function Home() {
             value={email}
             autoComplete='off'
             onChange={(e) => setEmail(e.target.value)}
-            className='text-black'
+            className="border outline-none py-3 pl-3 w-[300px] border-gray-200 rounded-md "
           />
         </div>
 
@@ -58,15 +59,18 @@ export default function Home() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className='text-black'
+            className="border outline-none py-3 pl-3 w-[300px] border-gray-200 rounded-md "
           />
         </div>
 
         <div>
-          <button type="submit">Sign In</button>
+          <button type="submit" className="bg-black py-3 pl-[130px] pr-[130px] text-white rounded-md"
+>Sign In</button>
         </div>
       </form>
-      {loginError && <div className="text-red-500">{loginError}</div>}
+    
     </div>
+      {loginError && <div className="text-red-500 text-center mt-5">{loginError}</div>}
+      </>
   );
 }

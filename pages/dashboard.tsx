@@ -6,6 +6,7 @@ import {
   Marker,
 } from "@react-google-maps/api";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { HiMiniStar } from "react-icons/hi2";
@@ -13,7 +14,7 @@ import { HiMiniStar } from "react-icons/hi2";
 interface User {
   id: number;
   name: string;
-  // photoUrl: string;
+ photoUrl: string;
   rating: number;
   phone: number;
 }
@@ -48,6 +49,8 @@ const Dashboard = () => {
   const [dropoffAddress, setDropoffAddress] = useState("");
   const [showSchedulePopup, setShowSchedulePopup] = useState(false);
   const [scheduledPickupTime, setScheduledPickupTime] = useState("");
+  const [inProgressRides, setInProgressRides] = useState<Ride[]>([]);
+
 
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -338,6 +341,28 @@ const Dashboard = () => {
     fetchRides();
   }, []);
 
+  useEffect(() => {
+    const fetchInProgressRides = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/rides/inprogress');
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`);
+        }
+        const rides = await response.json();
+        setInProgressRides(rides);
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInProgressRides();
+  }, []);
+
   const mapOptions = {
     fullscreenControl: false,
     mapTypeControl: false,
@@ -379,6 +404,20 @@ const Dashboard = () => {
             onClick={() => onMarkerClick(ride)}
           />
         ))}
+           {inProgressRides.map((ride) => (
+  <div key={ride.id} className="absolute bottom-0 bg-white w-full h-[20vh] pt-4 pb-2 rounded-t-[16px]">
+       <a href={`/ride/${ride.id}`}>
+        <div className="text-center">Go Back to Ride</div>
+    <div className="px-2 mt-2">
+              <li>{ride.pickupLocation}</li>
+              <div className="border-l-2 h-5 border-black"></div>
+              <li>{ride.dropoffLocation}</li>
+            </div>
+    
+    </a>
+  </div>
+))}
+
         {selectedRide && (
           <div className="absolute bottom-0 bg-white w-full h-[30vh] pt-4 pb-2 rounded-t-[16px] overflow-y-scroll">
             {(() => {

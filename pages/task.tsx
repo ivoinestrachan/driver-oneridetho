@@ -137,9 +137,9 @@ const Task = () => {
       <div className="bg-green-400 mt-5 ml-2 px-2 w-[300px] pb-5 pt-3 rounded-md">
         <div className="flex items-center justify-between w-[95%]">
           <div className="text-[16px]">Weekly Earning</div>
-          <div className="text-[16px]">30% One Ride Tho</div>
+          <div className="text-[16px]">Payout To ORT</div>
         </div>
-        <div className="flex items-center justify-between w-[65%]">
+        <div className="flex items-center justify-between w-[75%]">
         <div className="ml-2 text-[20px]">
           $
           {totalEarnings !== undefined

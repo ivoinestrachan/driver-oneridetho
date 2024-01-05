@@ -59,7 +59,7 @@ const RidePage = () => {
   const [isPickedUp, setIsPickedUp] = useState(false);
   const [rideCancelled, setRideCancelled] = useState(false);
   const fetcher = (url: string) => axios.get(url).then((res) => res.data);
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { data: swrRideDetails, error: rideError } = useSWR(
     rideId ? `/api/rides/${rideId}` : null,
     fetcher

@@ -65,6 +65,14 @@ const RidePage = () => {
     fetcher
   );
 
+
+  useEffect(() => {
+    if (status !== "loading" && !session) {
+      alert("You must be logged in to view this page");
+      router.push("/");
+    }
+  }, [session, status, router]);
+  
   useEffect(() => {
     if (swrRideDetails?.status === "Cancelled") {
       alert("Ride has been cancelled");
@@ -356,6 +364,7 @@ const RidePage = () => {
 
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;
+
 
   return (
     <div>

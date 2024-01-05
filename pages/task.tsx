@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { FaHistory } from "react-icons/fa";
+import { useSession } from "next-auth/react";
+import router from "next/router";
 
 type Ride = {
   id: number;
@@ -20,6 +22,14 @@ const Task = () => {
   const [scheduledRides, setScheduledRides] = useState<Ride[]>([]);
   const [completedRides, setCompletedRides] = useState<Ride[]>([]);
   const [cancelledRides, setCancelledRides] = useState<Ride[]>([]);
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (status !== "loading" && !session) {
+      alert("You must be logged in to view this page");
+      router.push("/");
+    }
+  }, [session, status, router]);
 
   const renderNoRidesMessage = () => {
     return <div className="text-center py-[200px] font-bold text-[24px]">No rides</div>;
@@ -131,6 +141,7 @@ const Task = () => {
      );
    
   };
+
 
   return (
     <div>
